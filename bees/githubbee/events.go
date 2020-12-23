@@ -36,7 +36,7 @@ func (mod *GitHubBee) handleReleaseEvent(event *github.Event) {
 
 	ev := bees.Event{
 		Bee:  mod.Name(),
-		Name: "push",
+		Name: "release",
 		Options: []bees.Placeholder{
 			{
 				Name:  "public",
@@ -59,22 +59,17 @@ func (mod *GitHubBee) handleReleaseEvent(event *github.Event) {
 				Value: *event.Actor.Login,
 			},
 			{
-				Name:  "url",
-				Type:  "url",
-				Value: fmt.Sprintf("https://github.com/%s/compare/%s...%s", *event.Repo.Name, (*b.Before)[0:12], (*b.Head)[0:12]),
-			},
-			{
 				Name:  "event_id",
 				Type:  "string",
 				Value: *event.ID,
 			},
 			{
-				Name:  "release_name",
+				Name:  "release_title",
 				Type:  "string",
 				Value: *b.Release.Name,
 			},
 			{
-				Name:  "release_tag",
+				Name:  "release_tag_version",
 				Type:  "string",
 				Value: *b.Release.TagName,
 			},
