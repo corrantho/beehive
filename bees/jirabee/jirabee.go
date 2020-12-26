@@ -1,5 +1,5 @@
 /*
- *    Copyright (C) 2014-2017 Christian Muehlhaeuser
+ *    Copyright (C) 2017 Christian Muehlhaeuser
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Affero General Public License as published
@@ -15,113 +15,210 @@
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *    Authors:
+ *      Nicolas Martin <penguwingithub@gmail.com>
  *      Christian Muehlhaeuser <muesli@gmail.com>
  */
 
-// Package webbee is a Bee that starts an HTTP server and fires events for
-// incoming requests.
-package webbee
+// Package githubbee is a Bee that can interface with GitHub
+package githubbee
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"net/url"
+	"context"
+	"time"
+
+	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 
 	"github.com/muesli/beehive/bees"
 )
 
-// WebBee is a Bee that starts an HTTP server and fires events for incoming
-// requests.
-type WebBee struct {
+// GitHubBee is a Bee that can interface with GitHub
+type GitHubBee struct {
 	bees.Bee
 
-	addr string
-
 	eventChan chan bees.Event
+	client    *github.Client
+
+	accessToken string
+	owner       string
+	repository  string
+}
+
+// Action triggers the actions passed to it.
+func (mod *GitHubBee) Action(action bees.Action) []bees.Placeholder {
+	ctx := context.Background()
+	outs := []bees.Placeholder{}
+	switch action.Name {
+	case "follow":
+		var user string
+		action.Options.Bind("username", &user)
+
+		if _, err := mod.client.Users.Follow(ctx, user); err != nil {
+			mod.LogErrorf("Failed to follow user: %v", err)
+		}
+
+	case "unfollow":
+		var user string
+		action.Options.Bind("username", &user)
+
+		if _, err := mod.client.Users.Unfollow(ctx, user); err != nil {
+			mod.LogErrorf("Failed to follow user: %v", err)
+		}
+
+	case "star":
+		var user string
+		var repo string
+		action.Options.Bind("owner", &user)
+		action.Options.Bind("repository", &repo)
+
+		if _, err := mod.client.Activity.Star(ctx, user, repo); err != nil {
+			mod.LogErrorf("Failed to star repository: %v", err)
+		}
+
+	case "unstar":
+		var user string
+		var repo string
+		action.Options.Bind("owner", &user)
+		action.Options.Bind("repository", &repo)
+
+		if _, err := mod.client.Activity.Unstar(ctx, user, repo); err != nil {
+			mod.LogErrorf("Failed to unstar repository: %v", err)
+		}
+
+	default:
+		panic("Unknown action triggered in " + mod.Name() + ": " + action.Name)
+	}
+
+	return outs
 }
 
 // Run executes the Bee's event loop.
-func (mod *WebBee) Run(cin chan bees.Event) {
-	mod.eventChan = cin
+func (mod *GitHubBee) Run(eventChan chan bees.Event) {
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: mod.accessToken},
+	)
+	tc := oauth2.NewClient(oauth2.NoContext, ts)
 
-	srv := &http.Server{Addr: mod.addr, Handler: mod}
-	l, err := net.Listen("tcp", mod.addr)
-	if err != nil {
-		mod.LogErrorf("Can't listen on %s", mod.addr)
-		return
-	}
-	defer l.Close()
+	mod.eventChan = eventChan
+	mod.client = github.NewClient(tc)
 
-	go func() {
-		err := srv.Serve(l)
-		if err != nil {
-			mod.LogErrorf("Server error: %v", err)
+	since := time.Now() // .Add(-time.Duration(24 * time.Hour))
+	timeout := time.Duration(time.Second * 10)
+	for {
+		select {
+		case <-mod.SigChan:
+			return
+		case <-time.After(timeout):
+			mod.getRepositoryEvents(mod.owner, mod.repository, since)
+
 		}
-		// Go 1.8+: srv.Close()
-	}()
-
-	select {
-	case <-mod.SigChan:
-		return
+		since = time.Now()
+		timeout = time.Duration(time.Minute)
 	}
 }
 
-func (mod *WebBee) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ev := bees.Event{
-		Bee: mod.Name(),
-		Options: []bees.Placeholder{
-			{
-				Name:  "remote_addr",
-				Type:  "address",
-				Value: req.RemoteAddr,
-			},
-			{
-				Name:  "url",
-				Type:  "url",
-				Value: req.URL.String(),
-			},
+func (mod *GitHubBee) getRepositoryEvents(owner, repo string, since time.Time) {
+	for page := 1; ; page++ {
+		opts := &github.ListOptions{
+			Page: page,
+		}
+		events, _, err := mod.client.Activity.ListRepositoryEvents(context.Background(), owner, repo, opts)
+		if err != nil {
+			mod.LogErrorf("Failed to fetch events: %v", err)
+			return
+		}
+		if len(events) == 0 {
+			mod.LogErrorf("No more events found")
+			return
+		}
+
+		for _, v := range events {
+			if since.After(*v.CreatedAt) {
+				return
+			}
+			switch *v.Type {
+			case "PushEvent":
+				mod.handlePushEvent(v)
+			case "WatchEvent":
+				mod.handleWatchEvent(v)
+			case "ForkEvent":
+				mod.handleForkEvent(v)
+			case "IssuesEvent":
+				mod.handleIssuesEvent(v)
+			case "IssueCommentEvent":
+				mod.handleIssueCommentEvent(v)
+			case "PullRequestEvent":
+				mod.handlePullRequestEvent(v)
+			case "PullRequestReviewCommentEvent":
+				mod.handlePullRequestReviewCommentEvent(v)
+
+			default:
+				mod.LogErrorf("Unhandled event: %s", *v.Type)
+			}
+		}
+	}
+}
+
+/*
+func (mod *GitHubBee) getNotifications() {
+	opts := &github.NotificationListOptions{
+		All: true,
+		// Participating: true,
+		ListOptions: github.ListOptions{
+			PerPage: 10,
 		},
 	}
-
-	u, err := url.ParseRequestURI(req.RequestURI)
-	if err == nil {
-		params := u.Query()
-		ev.Options.SetValue("query_params", "map", params)
+	notif, _, err := mod.client.Activity.ListNotifications(opts)
+	if err != nil {
+		mod.LogErrorf("Failed to fetch notifications: %v", err)
 	}
-
-	defer req.Body.Close()
-	b, err := ioutil.ReadAll(req.Body)
-	if err == nil {
-		ev.Options.SetValue("data", "string", string(b))
+	for _, v := range notif {
+		ev := bees.Event{
+			Bee:  mod.Name(),
+			Name: "notification",
+			Options: []bees.Placeholder{
+				{
+					Name:  "subject_title",
+					Type:  "string",
+					Value: *v.Subject.Title,
+				},
+				{
+					Name:  "subject_type",
+					Type:  "string",
+					Value: *v.Subject.Type,
+				},
+				{
+					Name:  "subject_url",
+					Type:  "url",
+					Value: *v.Subject.URL,
+				},
+				{
+					Name:  "reason",
+					Type:  "string",
+					Value: *v.Reason,
+				},
+				{
+					Name:  "id",
+					Type:  "string",
+					Value: *v.ID,
+				},
+				{
+					Name:  "url",
+					Type:  "url",
+					Value: *v.URL,
+				},
+			},
+		}
+		mod.eventChan <- ev
 	}
-
-	var payload interface{}
-	err = json.Unmarshal(b, &payload)
-	if err == nil {
-		ev.Options.SetValue("json", "map", payload)
-	}
-
-	switch req.Method {
-	case "GET":
-		ev.Name = "get"
-	case "POST":
-		ev.Name = "post"
-	case "PUT":
-		ev.Name = "put"
-	case "PATCH":
-		ev.Name = "patch"
-	case "DELETE":
-		ev.Name = "delete"
-	}
-
-	mod.eventChan <- ev
 }
+*/
 
 // ReloadOptions parses the config options and initializes the Bee.
-func (mod *WebBee) ReloadOptions(options bees.BeeOptions) {
+func (mod *GitHubBee) ReloadOptions(options bees.BeeOptions) {
 	mod.SetOptions(options)
 
-	options.Bind("address", &mod.addr)
+	options.Bind("accesstoken", &mod.accessToken)
+	options.Bind("owner", &mod.owner)
+	options.Bind("repository", &mod.repository)
 }
