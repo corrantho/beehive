@@ -32,8 +32,8 @@ import (
 	"github.com/muesli/beehive/bees"
 )
 
-// GitHubBee is a Bee that can interface with GitHub
-type GitHubBee struct {
+// JiraBee is a Bee that can interface with GitHub
+type JiraBee struct {
 	bees.Bee
 
 	eventChan chan bees.Event
@@ -45,7 +45,7 @@ type GitHubBee struct {
 }
 
 // Action triggers the actions passed to it.
-func (mod *GitHubBee) Action(action bees.Action) []bees.Placeholder {
+func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
 	ctx := context.Background()
 	outs := []bees.Placeholder{}
 	switch action.Name {
@@ -93,7 +93,7 @@ func (mod *GitHubBee) Action(action bees.Action) []bees.Placeholder {
 }
 
 // Run executes the Bee's event loop.
-func (mod *GitHubBee) Run(eventChan chan bees.Event) {
+func (mod *JiraBee) Run(eventChan chan bees.Event) {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: mod.accessToken},
 	)
@@ -117,7 +117,7 @@ func (mod *GitHubBee) Run(eventChan chan bees.Event) {
 	}
 }
 
-func (mod *GitHubBee) getRepositoryEvents(owner, repo string, since time.Time) {
+func (mod *JiraBee) getRepositoryEvents(owner, repo string, since time.Time) {
 	for page := 1; ; page++ {
 		opts := &github.ListOptions{
 			Page: page,
@@ -160,7 +160,7 @@ func (mod *GitHubBee) getRepositoryEvents(owner, repo string, since time.Time) {
 }
 
 /*
-func (mod *GitHubBee) getNotifications() {
+func (mod *JiraBee) getNotifications() {
 	opts := &github.NotificationListOptions{
 		All: true,
 		// Participating: true,
@@ -215,7 +215,7 @@ func (mod *GitHubBee) getNotifications() {
 */
 
 // ReloadOptions parses the config options and initializes the Bee.
-func (mod *GitHubBee) ReloadOptions(options bees.BeeOptions) {
+func (mod *JiraBee) ReloadOptions(options bees.BeeOptions) {
 	mod.SetOptions(options)
 
 	options.Bind("accesstoken", &mod.accessToken)

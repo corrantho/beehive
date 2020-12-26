@@ -26,14 +26,14 @@ import (
 	"github.com/muesli/beehive/bees"
 )
 
-// GitHubBeeFactory is a factory for GitHubBees
-type GitHubBeeFactory struct {
+// JiraBeeFactory is a factory for JiraBees
+type JiraBeeFactory struct {
 	bees.BeeFactory
 }
 
 // New returns a new Bee instance configured with the supplied options.
-func (factory *GitHubBeeFactory) New(name, description string, options bees.BeeOptions) bees.BeeInterface {
-	bee := GitHubBee{
+func (factory *JiraBeeFactory) New(name, description string, options bees.BeeOptions) bees.BeeInterface {
+	bee := JiraBee{
 		Bee: bees.NewBee(name, factory.ID(), description, options),
 	}
 	bee.ReloadOptions(options)
@@ -42,32 +42,32 @@ func (factory *GitHubBeeFactory) New(name, description string, options bees.BeeO
 }
 
 // ID returns the ID of this Bee.
-func (factory *GitHubBeeFactory) ID() string {
+func (factory *JiraBeeFactory) ID() string {
 	return "githubbee"
 }
 
 // Name returns the name of this Bee.
-func (factory *GitHubBeeFactory) Name() string {
+func (factory *JiraBeeFactory) Name() string {
 	return "GitHub"
 }
 
 // Description returns the desciption of this Bee.
-func (factory *GitHubBeeFactory) Description() string {
+func (factory *JiraBeeFactory) Description() string {
 	return "Reacts to events on GitHub"
 }
 
 // Image returns the filename of an image for this Bee.
-func (factory *GitHubBeeFactory) Image() string {
+func (factory *JiraBeeFactory) Image() string {
 	return factory.ID() + ".png"
 }
 
 // LogoColor returns the preferred logo background color (used by the admin interface).
-func (factory *GitHubBeeFactory) LogoColor() string {
+func (factory *JiraBeeFactory) LogoColor() string {
 	return "#6098d0"
 }
 
 // Options returns the options available to configure this Bee.
-func (factory *GitHubBeeFactory) Options() []bees.BeeOptionDescriptor {
+func (factory *JiraBeeFactory) Options() []bees.BeeOptionDescriptor {
 	opts := []bees.BeeOptionDescriptor{
 		{
 			Name:        "accesstoken",
@@ -92,7 +92,7 @@ func (factory *GitHubBeeFactory) Options() []bees.BeeOptionDescriptor {
 }
 
 // Events describes the available events provided by this Bee.
-func (factory *GitHubBeeFactory) Events() []bees.EventDescriptor {
+func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 	events := []bees.EventDescriptor{
 		{
 			Namespace:   factory.Name(),
@@ -514,7 +514,7 @@ func (factory *GitHubBeeFactory) Events() []bees.EventDescriptor {
 }
 
 // Actions describes the available actions provided by this Bee.
-func (factory *GitHubBeeFactory) Actions() []bees.ActionDescriptor {
+func (factory *JiraBeeFactory) Actions() []bees.ActionDescriptor {
 	actions := []bees.ActionDescriptor{
 		{
 			Namespace:   factory.Name(),
@@ -586,6 +586,6 @@ func (factory *GitHubBeeFactory) Actions() []bees.ActionDescriptor {
 }
 
 func init() {
-	f := GitHubBeeFactory{}
+	f := JiraBeeFactory{}
 	bees.RegisterFactory(&f)
 }
