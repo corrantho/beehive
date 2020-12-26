@@ -18,8 +18,8 @@
  *      Christian Muehlhaeuser <muesli@gmail.com>
  */
 
-// Package githubbee is a Bee that can interface with GitHub
-package githubbee
+// Package jirabee is a Bee that can interface with Jira
+package jirabee
 
 import (
 	"encoding/json"

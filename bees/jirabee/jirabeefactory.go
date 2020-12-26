@@ -19,8 +19,8 @@
  *      Christian Muehlhaeuser <muesli@gmail.com>
  */
 
-// Package githubbee is a Bee that can interface with GitHub
-package githubbee
+// Package jirabee is a Bee that can interface with Jira
+package jirabee
 
 import (
 	"github.com/muesli/beehive/bees"
@@ -43,17 +43,17 @@ func (factory *JiraBeeFactory) New(name, description string, options bees.BeeOpt
 
 // ID returns the ID of this Bee.
 func (factory *JiraBeeFactory) ID() string {
-	return "githubbee"
+	return "jirabee"
 }
 
 // Name returns the name of this Bee.
 func (factory *JiraBeeFactory) Name() string {
-	return "GitHub"
+	return "Jira"
 }
 
 // Description returns the desciption of this Bee.
 func (factory *JiraBeeFactory) Description() string {
-	return "Reacts to events on GitHub"
+	return "Reacts to events on Jira"
 }
 
 // Image returns the filename of an image for this Bee.
@@ -71,7 +71,7 @@ func (factory *JiraBeeFactory) Options() []bees.BeeOptionDescriptor {
 	opts := []bees.BeeOptionDescriptor{
 		{
 			Name:        "accesstoken",
-			Description: "Your GitHub access token",
+			Description: "Your Jira access token",
 			Type:        "string",
 			Mandatory:   true,
 		},
@@ -126,7 +126,7 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 				},
 				{
 					Name:        "event_id",
-					Description: "ID of the GitHub event",
+					Description: "ID of the Jira event",
 					Type:        "string",
 				},
 			},
@@ -200,7 +200,7 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 				},
 				{
 					Name:        "event_id",
-					Description: "ID of the GitHub event",
+					Description: "ID of the Jira event",
 					Type:        "string",
 				},
 			},
@@ -232,7 +232,7 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 				},
 				{
 					Name:        "event_id",
-					Description: "ID of the GitHub event",
+					Description: "ID of the Jira event",
 					Type:        "string",
 				},
 			},
@@ -264,7 +264,7 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 				},
 				{
 					Name:        "url",
-					Description: "URL to the issue on GitHub",
+					Description: "URL to the issue on Jira",
 					Type:        "url",
 				},
 				{
@@ -311,7 +311,7 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 				},
 				{
 					Name:        "url",
-					Description: "URL to the issue on GitHub",
+					Description: "URL to the issue on Jira",
 					Type:        "url",
 				},
 				{
@@ -358,7 +358,7 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 				},
 				{
 					Name:        "url",
-					Description: "URL to the comment on GitHub",
+					Description: "URL to the comment on Jira",
 					Type:        "url",
 				},
 				{
@@ -400,7 +400,7 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 				},
 				{
 					Name:        "url",
-					Description: "URL to the Pull Request on GitHub",
+					Description: "URL to the Pull Request on Jira",
 					Type:        "url",
 				},
 				{
@@ -447,7 +447,7 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 				},
 				{
 					Name:        "url",
-					Description: "URL to the Pull Request on GitHub",
+					Description: "URL to the Pull Request on Jira",
 					Type:        "url",
 				},
 				{
@@ -494,7 +494,7 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 				},
 				{
 					Name:        "url",
-					Description: "URL to the comment on GitHub",
+					Description: "URL to the comment on Jira",
 					Type:        "url",
 				},
 				{
