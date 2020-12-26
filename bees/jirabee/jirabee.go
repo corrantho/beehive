@@ -19,8 +19,8 @@
  *      Christian Muehlhaeuser <muesli@gmail.com>
  */
 
-// Package githubbee is a Bee that can interface with GitHub
-package githubbee
+// Package jirabee is a Bee that can interface with Jira
+package jirabee
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	"github.com/muesli/beehive/bees"
 )
 
-// JiraBee is a Bee that can interface with GitHub
+// JiraBee is a Bee that can interface with Jira
 type JiraBee struct {
 	bees.Bee
 
@@ -54,14 +54,6 @@ func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
 		action.Options.Bind("username", &user)
 
 		if _, err := mod.client.Users.Follow(ctx, user); err != nil {
-			mod.LogErrorf("Failed to follow user: %v", err)
-		}
-
-	case "unfollow":
-		var user string
-		action.Options.Bind("username", &user)
-
-		if _, err := mod.client.Users.Unfollow(ctx, user); err != nil {
 			mod.LogErrorf("Failed to follow user: %v", err)
 		}
 
