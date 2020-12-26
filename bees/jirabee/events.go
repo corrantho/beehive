@@ -30,7 +30,7 @@ import (
 	"github.com/muesli/beehive/bees"
 )
 
-func (mod *GitHubBee) handlePushEvent(event *github.Event) {
+func (mod *JiraBee) handlePushEvent(event *github.Event) {
 	var b github.PushEvent
 	json.Unmarshal(*event.RawPayload, &b)
 
@@ -118,7 +118,7 @@ func (mod *GitHubBee) handlePushEvent(event *github.Event) {
 	}
 }
 
-func (mod *GitHubBee) handleWatchEvent(event *github.Event) {
+func (mod *JiraBee) handleWatchEvent(event *github.Event) {
 	var b github.WatchEvent
 	json.Unmarshal(*event.RawPayload, &b)
 
@@ -156,7 +156,7 @@ func (mod *GitHubBee) handleWatchEvent(event *github.Event) {
 	mod.eventChan <- ev
 }
 
-func (mod *GitHubBee) handleForkEvent(event *github.Event) {
+func (mod *JiraBee) handleForkEvent(event *github.Event) {
 	var b github.ForkEvent
 	json.Unmarshal(*event.RawPayload, &b)
 
@@ -194,7 +194,7 @@ func (mod *GitHubBee) handleForkEvent(event *github.Event) {
 	mod.eventChan <- ev
 }
 
-func (mod *GitHubBee) handleIssuesEvent(event *github.Event) {
+func (mod *JiraBee) handleIssuesEvent(event *github.Event) {
 	var b github.IssuesEvent
 	json.Unmarshal(*event.RawPayload, &b)
 
@@ -261,7 +261,7 @@ func (mod *GitHubBee) handleIssuesEvent(event *github.Event) {
 	}
 }
 
-func (mod *GitHubBee) handleIssueCommentEvent(event *github.Event) {
+func (mod *JiraBee) handleIssueCommentEvent(event *github.Event) {
 	var b github.IssueCommentEvent
 	json.Unmarshal(*event.RawPayload, &b)
 
@@ -320,7 +320,7 @@ func (mod *GitHubBee) handleIssueCommentEvent(event *github.Event) {
 	}
 }
 
-func (mod *GitHubBee) handlePullRequestEvent(event *github.Event) {
+func (mod *JiraBee) handlePullRequestEvent(event *github.Event) {
 	var b github.PullRequestEvent
 	json.Unmarshal(*event.RawPayload, &b)
 
@@ -388,7 +388,7 @@ func (mod *GitHubBee) handlePullRequestEvent(event *github.Event) {
 	}
 }
 
-func (mod *GitHubBee) handlePullRequestReviewCommentEvent(event *github.Event) {
+func (mod *JiraBee) handlePullRequestReviewCommentEvent(event *github.Event) {
 	var b github.PullRequestReviewCommentEvent
 	json.Unmarshal(*event.RawPayload, &b)
 
