@@ -151,61 +151,6 @@ func (mod *JiraBee) getRepositoryEvents(owner, repo string, since time.Time) {
 	}
 }
 
-/*
-func (mod *JiraBee) getNotifications() {
-	opts := &github.NotificationListOptions{
-		All: true,
-		// Participating: true,
-		ListOptions: github.ListOptions{
-			PerPage: 10,
-		},
-	}
-	notif, _, err := mod.client.Activity.ListNotifications(opts)
-	if err != nil {
-		mod.LogErrorf("Failed to fetch notifications: %v", err)
-	}
-	for _, v := range notif {
-		ev := bees.Event{
-			Bee:  mod.Name(),
-			Name: "notification",
-			Options: []bees.Placeholder{
-				{
-					Name:  "subject_title",
-					Type:  "string",
-					Value: *v.Subject.Title,
-				},
-				{
-					Name:  "subject_type",
-					Type:  "string",
-					Value: *v.Subject.Type,
-				},
-				{
-					Name:  "subject_url",
-					Type:  "url",
-					Value: *v.Subject.URL,
-				},
-				{
-					Name:  "reason",
-					Type:  "string",
-					Value: *v.Reason,
-				},
-				{
-					Name:  "id",
-					Type:  "string",
-					Value: *v.ID,
-				},
-				{
-					Name:  "url",
-					Type:  "url",
-					Value: *v.URL,
-				},
-			},
-		}
-		mod.eventChan <- ev
-	}
-}
-*/
-
 // ReloadOptions parses the config options and initializes the Bee.
 func (mod *JiraBee) ReloadOptions(options bees.BeeOptions) {
 	mod.SetOptions(options)
