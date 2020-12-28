@@ -124,25 +124,19 @@ func (factory *JiraBeeFactory) Actions() []bees.ActionDescriptor {
 					Mandatory:   false,
 				},
 				{
-					Name:        "Type",
+					Name:        "issue_type",
 					Description: "Type of the issue (Story, Bug, ...)",
 					Type:        "string",
 					Mandatory:   true,
 				},
 				{
-					Name:        "Type",
-					Description: "Type of the issue (Story, Bug, ...)",
-					Type:        "string",
-					Mandatory:   true,
-				},
-				{
-					Name:        "Summary",
+					Name:        "issue_summary",
 					Description: "Summary of the issue (title)",
 					Type:        "string",
 					Mandatory:   true,
 				},
 				{
-					Name:        "description",
+					Name:        "issue_description",
 					Description: "Description of the issue",
 					Type:        "string",
 					Mandatory:   true,

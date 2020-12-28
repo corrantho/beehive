@@ -24,10 +24,8 @@ package jirabee
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
 
 	"github.com/muesli/beehive/bees"
 )
@@ -49,33 +47,30 @@ func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
 	ctx := context.Background()
 	outs := []bees.Placeholder{}
 	switch action.Name {
-	case "follow":
-		var user string
-		action.Options.Bind("username", &user)
+	case "create_issue":
+		var project string
+		var reporterEmail string
+		var assigneeEmail string
+		var issueType string
+		var issueSummary string
+		var issueDescription string
 
-		if _, err := mod.client.Users.Follow(ctx, user); err != nil {
+		action.Options.Bind("project", &project)
+		action.Options.Bind("reporter_email", &reporterEmail)
+		action.Options.Bind("assignee_email", &assigneeEmail)
+		action.Options.Bind("issue_type", &issueType)
+		action.Options.Bind("issue_summary", &issueSummary)
+		action.Options.Bind("issue_description", &issueDescription)
+
+		// If reporterEmail is not empty, we search for the AccountID of the user
+
+		// If assigneeEmail is not empty, we search for the AccountID of the user
+
+		// Create issue
+
+		/*if _, err := mod.client.Users.Follow(ctx, user); err != nil {
 			mod.LogErrorf("Failed to follow user: %v", err)
-		}
-
-	case "star":
-		var user string
-		var repo string
-		action.Options.Bind("owner", &user)
-		action.Options.Bind("repository", &repo)
-
-		if _, err := mod.client.Activity.Star(ctx, user, repo); err != nil {
-			mod.LogErrorf("Failed to star repository: %v", err)
-		}
-
-	case "unstar":
-		var user string
-		var repo string
-		action.Options.Bind("owner", &user)
-		action.Options.Bind("repository", &repo)
-
-		if _, err := mod.client.Activity.Unstar(ctx, user, repo); err != nil {
-			mod.LogErrorf("Failed to unstar repository: %v", err)
-		}
+		}*/
 
 	default:
 		panic("Unknown action triggered in " + mod.Name() + ": " + action.Name)
@@ -85,71 +80,7 @@ func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
 }
 
 // Run executes the Bee's event loop.
-func (mod *JiraBee) Run(eventChan chan bees.Event) {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: mod.accessToken},
-	)
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-
-	mod.eventChan = eventChan
-	mod.client = github.NewClient(tc)
-
-	since := time.Now() // .Add(-time.Duration(24 * time.Hour))
-	timeout := time.Duration(time.Second * 10)
-	for {
-		select {
-		case <-mod.SigChan:
-			return
-		case <-time.After(timeout):
-			mod.getRepositoryEvents(mod.owner, mod.repository, since)
-
-		}
-		since = time.Now()
-		timeout = time.Duration(time.Minute)
-	}
-}
-
-func (mod *JiraBee) getRepositoryEvents(owner, repo string, since time.Time) {
-	for page := 1; ; page++ {
-		opts := &github.ListOptions{
-			Page: page,
-		}
-		events, _, err := mod.client.Activity.ListRepositoryEvents(context.Background(), owner, repo, opts)
-		if err != nil {
-			mod.LogErrorf("Failed to fetch events: %v", err)
-			return
-		}
-		if len(events) == 0 {
-			mod.LogErrorf("No more events found")
-			return
-		}
-
-		for _, v := range events {
-			if since.After(*v.CreatedAt) {
-				return
-			}
-			switch *v.Type {
-			case "PushEvent":
-				mod.handlePushEvent(v)
-			case "WatchEvent":
-				mod.handleWatchEvent(v)
-			case "ForkEvent":
-				mod.handleForkEvent(v)
-			case "IssuesEvent":
-				mod.handleIssuesEvent(v)
-			case "IssueCommentEvent":
-				mod.handleIssueCommentEvent(v)
-			case "PullRequestEvent":
-				mod.handlePullRequestEvent(v)
-			case "PullRequestReviewCommentEvent":
-				mod.handlePullRequestReviewCommentEvent(v)
-
-			default:
-				mod.LogErrorf("Unhandled event: %s", *v.Type)
-			}
-		}
-	}
-}
+func (mod *JiraBee) Run(eventChan chan bees.Event) {}
 
 // ReloadOptions parses the config options and initializes the Bee.
 func (mod *JiraBee) ReloadOptions(options bees.BeeOptions) {
