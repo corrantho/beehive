@@ -80,6 +80,7 @@ func (mod *JiraBee) Run(eventChan chan bees.Event) {
 	}
 
 	var err error
+
 	mod.client, err = jira.NewClient(tp.Client(), mod.url)
 	if err != nil {
 		mod.LogErrorf("Failed to create JIRA client: %v", err)
@@ -98,10 +99,40 @@ func (mod *JiraBee) ReloadOptions(options bees.BeeOptions) {
 
 func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string, assigneeEmail string, issueType string, issueSummary string, issueDescription string) {
 	fmt.Println("handleCreateIssue has been called")
+
 	// If reporterEmail is not empty, we search for the AccountID of the user
+	reporterUser, err := mod.getJiraUser(reporterEmail)
+	if err != nil {
+		mod.LogErrorf("Error when trying to get reporter user: %v", err)
+		return
+	}
+	fmt.Printf("Reporter: %s %s\n", reporterUser.AccountID, reporterUser.DisplayName)
 
 	// If assigneeEmail is not empty, we search for the AccountID of the user
+	assigneeUser, err := mod.getJiraUser(assigneeEmail)
+	if err != nil {
+		mod.LogErrorf("Error when trying to get assignee user: %v", err)
+		return
+	}
+	fmt.Printf("Assignee: %s %s\n", assigneeUser.AccountID, assigneeUser.DisplayName)
 
 	// Create issue
 
+}
+
+func (mod *JiraBee) getJiraUser(email string) (*jira.User, error) {
+	if len(email) > 0 {
+		usersFound, _, err := mod.client.User.Find(email)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if len(usersFound) != 1 {
+			return nil, fmt.Errorf("Zero or more than one user found with email address %s", email)
+		}
+
+		return &usersFound[0], nil
+	}
+	return nil, fmt.Errorf("No user found with email address %s", email)
 }
