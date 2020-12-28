@@ -23,10 +23,9 @@
 package jirabee
 
 import (
-	"context"
+	"fmt"
 
-	"github.com/google/go-github/github"
-
+	"github.com/andygrunwald/go-jira"
 	"github.com/muesli/beehive/bees"
 )
 
@@ -35,18 +34,19 @@ type JiraBee struct {
 	bees.Bee
 
 	eventChan chan bees.Event
-	client    *github.Client
+	client    *jira.Client
 
-	accessToken string
-	owner       string
-	repository  string
+	url      string
+	username string
+	password string
 }
 
 // Action triggers the actions passed to it.
 func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
-	ctx := context.Background()
 	outs := []bees.Placeholder{}
+
 	switch action.Name {
+
 	case "create_issue":
 		var project string
 		var reporterEmail string
@@ -62,15 +62,7 @@ func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
 		action.Options.Bind("issue_summary", &issueSummary)
 		action.Options.Bind("issue_description", &issueDescription)
 
-		// If reporterEmail is not empty, we search for the AccountID of the user
-
-		// If assigneeEmail is not empty, we search for the AccountID of the user
-
-		// Create issue
-
-		/*if _, err := mod.client.Users.Follow(ctx, user); err != nil {
-			mod.LogErrorf("Failed to follow user: %v", err)
-		}*/
+		mod.handleCreateIssueAction(project, reporterEmail, assigneeEmail, issueType, issueSummary, issueDescription)
 
 	default:
 		panic("Unknown action triggered in " + mod.Name() + ": " + action.Name)
@@ -80,13 +72,36 @@ func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
 }
 
 // Run executes the Bee's event loop.
-func (mod *JiraBee) Run(eventChan chan bees.Event) {}
+func (mod *JiraBee) Run(eventChan chan bees.Event) {
+
+	tp := jira.BasicAuthTransport{
+		Username: mod.username,
+		Password: mod.password,
+	}
+
+	var err error
+	mod.client, err = jira.NewClient(tp.Client(), mod.url)
+	if err != nil {
+		mod.LogErrorf("Failed to create JIRA client: %v", err)
+	}
+
+}
 
 // ReloadOptions parses the config options and initializes the Bee.
 func (mod *JiraBee) ReloadOptions(options bees.BeeOptions) {
 	mod.SetOptions(options)
 
-	options.Bind("accesstoken", &mod.accessToken)
-	options.Bind("owner", &mod.owner)
-	options.Bind("repository", &mod.repository)
+	options.Bind("url", &mod.url)
+	options.Bind("username", &mod.username)
+	options.Bind("password", &mod.password)
+}
+
+func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string, assigneeEmail string, issueType string, issueSummary string, issueDescription string) {
+	fmt.Println("handleCreateIssue has been called")
+	// If reporterEmail is not empty, we search for the AccountID of the user
+
+	// If assigneeEmail is not empty, we search for the AccountID of the user
+
+	// Create issue
+
 }
