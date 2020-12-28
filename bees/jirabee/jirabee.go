@@ -23,6 +23,7 @@
 package jirabee
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/andygrunwald/go-jira"
@@ -62,7 +63,12 @@ func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
 		action.Options.Bind("issue_summary", &issueSummary)
 		action.Options.Bind("issue_description", &issueDescription)
 
-		mod.handleCreateIssueAction(project, reporterEmail, assigneeEmail, issueType, issueSummary, issueDescription)
+		issueKey, err := mod.handleCreateIssueAction(project, reporterEmail, assigneeEmail, issueType, issueSummary, issueDescription)
+		if err != nil {
+			mod.LogErrorf("Error during handleCreateIssueAction: %v", err)
+		} else {
+			mod.Logf("Issue created: %s", *issueKey)
+		}
 
 	default:
 		panic("Unknown action triggered in " + mod.Name() + ": " + action.Name)
@@ -97,27 +103,49 @@ func (mod *JiraBee) ReloadOptions(options bees.BeeOptions) {
 	options.Bind("password", &mod.password)
 }
 
-func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string, assigneeEmail string, issueType string, issueSummary string, issueDescription string) {
-	fmt.Println("handleCreateIssue has been called")
-
+func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string, assigneeEmail string, issueType string, issueSummary string, issueDescription string) (*string, error) {
 	// If reporterEmail is not empty, we search for the AccountID of the user
 	reporterUser, err := mod.getJiraUser(reporterEmail)
 	if err != nil {
-		mod.LogErrorf("Error when trying to get reporter user: %v", err)
-		return
+		return nil, fmt.Errorf("Error when trying to get reporter user: %v", err)
 	}
-	fmt.Printf("Reporter: %s %s\n", reporterUser.AccountID, reporterUser.DisplayName)
 
 	// If assigneeEmail is not empty, we search for the AccountID of the user
 	assigneeUser, err := mod.getJiraUser(assigneeEmail)
 	if err != nil {
-		mod.LogErrorf("Error when trying to get assignee user: %v", err)
-		return
+		return nil, fmt.Errorf("Error when trying to get assignee user: %v", err)
 	}
-	fmt.Printf("Assignee: %s %s\n", assigneeUser.AccountID, assigneeUser.DisplayName)
 
 	// Create issue
+	i := jira.Issue{
+		Fields: &jira.IssueFields{
+			Reporter: &jira.User{
+				AccountID: reporterUser.AccountID,
+			},
+			Assignee: &jira.User{
+				AccountID: assigneeUser.AccountID,
+			},
+			Description: issueDescription,
+			Type: jira.IssueType{
+				Name: issueType,
+			},
+			Project: jira.Project{
+				Key: project,
+			},
+			Summary: issueSummary,
+		},
+	}
 
+	issueCreated, jiraResponse, err := mod.client.Issue.Create(&i)
+	if err != nil {
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(jiraResponse.Body)
+		jiraResponseBody := buf.String()
+
+		return nil, fmt.Errorf("Error when trying to create an issue: \n%v\n%v", err, jiraResponseBody)
+	}
+
+	return &issueCreated.Key, nil
 }
 
 func (mod *JiraBee) getJiraUser(email string) (*jira.User, error) {
@@ -134,5 +162,5 @@ func (mod *JiraBee) getJiraUser(email string) (*jira.User, error) {
 
 		return &usersFound[0], nil
 	}
-	return nil, fmt.Errorf("No user found with email address %s", email)
+	return nil, nil
 }
