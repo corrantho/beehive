@@ -104,27 +104,10 @@ func (mod *JiraBee) ReloadOptions(options bees.BeeOptions) {
 }
 
 func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string, assigneeEmail string, issueType string, issueSummary string, issueDescription string) (*string, error) {
-	// If reporterEmail is not empty, we search for the AccountID of the user
-	reporterUser, err := mod.getJiraUser(reporterEmail)
-	if err != nil {
-		return nil, fmt.Errorf("Error when trying to get reporter user: %v", err)
-	}
-
-	// If assigneeEmail is not empty, we search for the AccountID of the user
-	assigneeUser, err := mod.getJiraUser(assigneeEmail)
-	if err != nil {
-		return nil, fmt.Errorf("Error when trying to get assignee user: %v", err)
-	}
 
 	// Create issue
 	i := jira.Issue{
 		Fields: &jira.IssueFields{
-			Reporter: &jira.User{
-				AccountID: reporterUser.AccountID,
-			},
-			Assignee: &jira.User{
-				AccountID: assigneeUser.AccountID,
-			},
 			Description: issueDescription,
 			Type: jira.IssueType{
 				Name: issueType,
@@ -136,6 +119,31 @@ func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string
 		},
 	}
 
+	// If reporterEmail is not empty, we search for the AccountID of the user
+	if len(reporterEmail) > 0 {
+		reporterUser, err := mod.getJiraUser(reporterEmail)
+		if err != nil {
+			return nil, fmt.Errorf("Error when trying to get reporter user: %v", err)
+		}
+
+		i.Fields.Reporter = &jira.User{
+			AccountID: reporterUser.AccountID,
+		}
+	}
+
+	// If assigneeEmail is not empty, we search for the AccountID of the user
+	if len(assigneeEmail) > 0 {
+		assigneeUser, err := mod.getJiraUser(assigneeEmail)
+		if err != nil {
+			return nil, fmt.Errorf("Error when trying to get assignee user: %v", err)
+		}
+
+		i.Fields.Assignee = &jira.User{
+			AccountID: assigneeUser.AccountID,
+		}
+	}
+
+	// Call Issue service
 	issueCreated, jiraResponse, err := mod.client.Issue.Create(&i)
 	if err != nil {
 		buf := new(bytes.Buffer)
