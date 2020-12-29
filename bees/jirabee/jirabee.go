@@ -1,5 +1,5 @@
 /*
- *    Copyright (C) 2017 Christian Muehlhaeuser
+ *    Copyright (C) 2020 Anthony Corrado
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Affero General Public License as published
@@ -15,8 +15,7 @@
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *    Authors:
- *      Nicolas Martin <penguwingithub@gmail.com>
- *      Christian Muehlhaeuser <muesli@gmail.com>
+ *      Anthony Corrado <anthony@synetz.fr>
  */
 
 // Package jirabee is a Bee that can interface with Jira
