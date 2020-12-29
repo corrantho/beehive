@@ -62,11 +62,11 @@ func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
 		action.Options.Bind("issue_summary", &issueSummary)
 		action.Options.Bind("issue_description", &issueDescription)
 
-		issueKey, err := mod.handleCreateIssueAction(project, reporterEmail, assigneeEmail, issueType, issueSummary, issueDescription)
+		issueCreated, err := mod.handleCreateIssueAction(project, reporterEmail, assigneeEmail, issueType, issueSummary, issueDescription)
 		if err != nil {
 			mod.LogErrorf("Error during handleCreateIssueAction: %v", err)
 		} else {
-			mod.Logf("Issue created: %s", *issueKey)
+			mod.Logf("Issue created: %s", issueCreated.Key)
 		}
 
 	default:
@@ -102,7 +102,7 @@ func (mod *JiraBee) ReloadOptions(options bees.BeeOptions) {
 	options.Bind("password", &mod.password)
 }
 
-func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string, assigneeEmail string, issueType string, issueSummary string, issueDescription string) (*string, error) {
+func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string, assigneeEmail string, issueType string, issueSummary string, issueDescription string) (*jira.Issue, error) {
 
 	// Create issue
 	i := jira.Issue{
@@ -152,7 +152,7 @@ func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string
 		return nil, fmt.Errorf("Error when trying to create an issue: \n%v\n%v", err, jiraResponseBody)
 	}
 
-	return &issueCreated.Key, nil
+	return issueCreated, nil
 }
 
 func (mod *JiraBee) getJiraUser(email string) (*jira.User, error) {
