@@ -231,6 +231,13 @@ func (mod *JiraBee) getJiraUser(email string) (*jira.User, error) {
 	return nil, nil
 }
 
-func (mod *JiraBee) handleCommentIssueAction(issueKey string, issueNewStatus string) (*jira.Issue, error) {
-	return nil, nil
+func (mod *JiraBee) handleCommentIssueAction(issueKey string, commentBody string) (*jira.Comment, error) {
+
+	comment := &jira.Comment{
+		Body: commentBody,
+	}
+
+	jiraComment, _, err := mod.client.Issue.AddComment(issueKey, comment)
+
+	return jiraComment, err
 }

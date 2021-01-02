@@ -179,7 +179,7 @@ func (factory *JiraBeeFactory) Actions() []bees.ActionDescriptor {
 					Mandatory:   true,
 				},
 			},
-		}
+		},
 	}
 
 	return actions
