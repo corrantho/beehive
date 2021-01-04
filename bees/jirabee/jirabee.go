@@ -23,7 +23,13 @@ package jirabee
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net"
+	"net/http"
+	"net/url"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/muesli/beehive/bees"
@@ -39,6 +45,11 @@ type JiraBee struct {
 	url      string
 	username string
 	password string
+	address  string
+}
+type JiraEvent struct {
+	WebhookEvent string      `json:"webhookEvent"`
+	Issue        *jira.Issue `json:"issue"`
 }
 
 // Action triggers the actions passed to it.
@@ -102,19 +113,98 @@ func (mod *JiraBee) Action(action bees.Action) []bees.Placeholder {
 
 // Run executes the Bee's event loop.
 func (mod *JiraBee) Run(eventChan chan bees.Event) {
+	mod.eventChan = eventChan
+	var err error
 
+	// HTTP Server to receive real-time events
+	srv := &http.Server{Addr: mod.address, Handler: mod}
+	l, err := net.Listen("tcp", mod.address)
+	if err != nil {
+		mod.LogErrorf("Can't listen on %s", mod.address)
+		return
+	}
+	defer l.Close()
+
+	go func() {
+		err := srv.Serve(l)
+		if err != nil {
+			mod.LogErrorf("Server error: %v", err)
+		}
+		// Go 1.8+: srv.Close()
+	}()
+
+	// Client used for the actions
 	tp := jira.BasicAuthTransport{
 		Username: mod.username,
 		Password: mod.password,
 	}
-
-	var err error
 
 	mod.client, err = jira.NewClient(tp.Client(), mod.url)
 	if err != nil {
 		mod.LogErrorf("Failed to create JIRA client: %v", err)
 	}
 
+	select {
+	case <-mod.SigChan:
+		return
+	}
+}
+
+func (mod *JiraBee) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	ev := bees.Event{
+		Bee: mod.Name(),
+		Options: []bees.Placeholder{
+			{
+				Name:  "remote_addr",
+				Type:  "address",
+				Value: req.RemoteAddr,
+			},
+			{
+				Name:  "url",
+				Type:  "url",
+				Value: req.URL.String(),
+			},
+		},
+	}
+
+	u, err := url.ParseRequestURI(req.RequestURI)
+	if err == nil {
+		params := u.Query()
+		ev.Options.SetValue("query_params", "map", params)
+	}
+
+	defer req.Body.Close()
+	b, err := ioutil.ReadAll(req.Body)
+	if err == nil {
+		ev.Options.SetValue("data", "string", string(b))
+	}
+	log.Printf("Body: %s\n", string(b))
+
+	jiraEvent := &JiraEvent{}
+
+	err = json.Unmarshal(b, &jiraEvent)
+	if err == nil {
+		ev.Options.SetValue("json", "map", jiraEvent)
+		log.Printf("JiraBee WebhookEvent : %s\n", jiraEvent.WebhookEvent)
+		if jiraEvent.Issue != nil {
+			log.Printf("JiraBee issue key: %s\n", jiraEvent.Issue.Key)
+		}
+	}
+
+	switch req.Method {
+	case "GET":
+		ev.Name = "get"
+	case "POST":
+		ev.Name = "post"
+	case "PUT":
+		ev.Name = "put"
+	case "PATCH":
+		ev.Name = "patch"
+	case "DELETE":
+		ev.Name = "delete"
+	}
+
+	mod.eventChan <- ev
 }
 
 // ReloadOptions parses the config options and initializes the Bee.
@@ -124,6 +214,7 @@ func (mod *JiraBee) ReloadOptions(options bees.BeeOptions) {
 	options.Bind("url", &mod.url)
 	options.Bind("username", &mod.username)
 	options.Bind("password", &mod.password)
+	options.Bind("address", &mod.address)
 }
 
 func (mod *JiraBee) handleCreateIssueAction(project string, reporterEmail string, assigneeEmail string, issueType string, issueSummary string, issueDescription string) (*jira.Issue, error) {

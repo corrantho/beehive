@@ -86,13 +86,52 @@ func (factory *JiraBeeFactory) Options() []bees.BeeOptionDescriptor {
 			Type:        "string",
 			Mandatory:   true,
 		},
+		{
+			Name:        "address",
+			Description: "Which address to listen on, eg: 0.0.0.0:12345",
+			Type:        "address",
+			Mandatory:   true,
+		},
 	}
 	return opts
 }
 
 // Events describes the available events provided by this Bee.
 func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
-	events := []bees.EventDescriptor{}
+	events := []bees.EventDescriptor{
+		{
+			Namespace:   factory.Name(),
+			Name:        "get",
+			Description: "A GET call was received by the HTTP server",
+			Options: []bees.PlaceholderDescriptor{
+				{
+					Name:        "remote_addr",
+					Description: "IP of the caller",
+					Type:        "address",
+				},
+				{
+					Name:        "url",
+					Description: "Request URL",
+					Type:        "url",
+				},
+				{
+					Name:        "query_params",
+					Description: "Map of query parameters received from caller",
+					Type:        "map",
+				},
+				{
+					Name:        "data",
+					Description: "Raw request data",
+					Type:        "string",
+				},
+				{
+					Name:        "json",
+					Description: "JSON map received from caller",
+					Type:        "map",
+				},
+			},
+		},
+	}
 	return events
 }
 
