@@ -25,7 +25,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 
@@ -145,36 +144,13 @@ func (mod *JiraBee) Run(eventChan chan bees.Event) {
 }
 
 func (mod *JiraBee) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	/*
-		u, err := url.ParseRequestURI(req.RequestURI)
-		if err == nil {
-			params := u.Query()
-			ev.Options.SetValue("query_params", "map", params)
-		}
-	*/
 	defer req.Body.Close()
 	b, err := ioutil.ReadAll(req.Body)
-	if err == nil {
-		//ev.Options.SetValue("data", "string", string(b))
+
+	_, err = mod.handleJiraEvent(b)
+	if err != nil {
+		mod.LogErrorf("An error occured during handleJiraEvent: %v", err)
 	}
-	log.Printf("Body: %s\n", string(b))
-
-	jiraEvent, _ = mod.handleJiraEvent(b)
-
-	/*
-		if jiraEvent, _ := mod.handleIssueRelatedEvent(b); jiraEvent != nil  {
-			return
-		} else if jiraEvent, _ := mod.handleIssueRelatedEvent(b); jiraEvent != nil  {
-			return
-		} else {
-			mod.LogErrorf("Unhandled event: %s", *v.Type)
-		}
-
-
-		if jiraEvent == nil {
-			return
-		}*/
-
 }
 
 // ReloadOptions parses the config options and initializes the Bee.
