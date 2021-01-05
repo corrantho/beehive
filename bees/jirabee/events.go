@@ -56,17 +56,23 @@ func (mod *JiraBee) handleJiraEvent(data []byte) (*JiraEvent, error) {
 
 func (mod *JiraBee) handleIssueCreatedEvent(data *JiraEvent) error {
 	ev := bees.Event{
-		Bee: mod.Name(),
+		Bee:  mod.Name(),
+		Name: "issue_created",
 		Options: []bees.Placeholder{
 			{
-				Name:  "remote_addr",
-				Type:  "address",
-				Value: nil,
+				Name:  "key",
+				Type:  "string",
+				Value: data.Issue.Key,
 			},
 			{
-				Name:  "url",
-				Type:  "url",
-				Value: nil,
+				Name:  "title",
+				Type:  "string",
+				Value: data.Issue.Fields.Summary,
+			},
+			{
+				Name:  "description",
+				Type:  "string",
+				Value: data.Issue.Fields.Description,
 			},
 		},
 	}

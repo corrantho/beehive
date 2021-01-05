@@ -101,33 +101,23 @@ func (factory *JiraBeeFactory) Events() []bees.EventDescriptor {
 	events := []bees.EventDescriptor{
 		{
 			Namespace:   factory.Name(),
-			Name:        "get",
-			Description: "A GET call was received by the HTTP server",
+			Name:        "issue_created",
+			Description: "Event triggered when an issue is created",
 			Options: []bees.PlaceholderDescriptor{
 				{
-					Name:        "remote_addr",
-					Description: "IP of the caller",
-					Type:        "address",
-				},
-				{
-					Name:        "url",
-					Description: "Request URL",
-					Type:        "url",
-				},
-				{
-					Name:        "query_params",
-					Description: "Map of query parameters received from caller",
-					Type:        "map",
-				},
-				{
-					Name:        "data",
-					Description: "Raw request data",
+					Name:        "key",
+					Description: "Key of the issue (example, BEEH-123)",
 					Type:        "string",
 				},
 				{
-					Name:        "json",
-					Description: "JSON map received from caller",
-					Type:        "map",
+					Name:        "title",
+					Description: "Title of the issue",
+					Type:        "string",
+				},
+				{
+					Name:        "description",
+					Description: "Description of the issue",
+					Type:        "string",
 				},
 			},
 		},
