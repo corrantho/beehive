@@ -23,13 +23,11 @@ package jirabee
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/muesli/beehive/bees"
@@ -46,10 +44,6 @@ type JiraBee struct {
 	username string
 	password string
 	address  string
-}
-type JiraEvent struct {
-	WebhookEvent string      `json:"webhookEvent"`
-	Issue        *jira.Issue `json:"issue"`
 }
 
 // Action triggers the actions passed to it.
@@ -151,60 +145,36 @@ func (mod *JiraBee) Run(eventChan chan bees.Event) {
 }
 
 func (mod *JiraBee) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ev := bees.Event{
-		Bee: mod.Name(),
-		Options: []bees.Placeholder{
-			{
-				Name:  "remote_addr",
-				Type:  "address",
-				Value: req.RemoteAddr,
-			},
-			{
-				Name:  "url",
-				Type:  "url",
-				Value: req.URL.String(),
-			},
-		},
-	}
-
-	u, err := url.ParseRequestURI(req.RequestURI)
-	if err == nil {
-		params := u.Query()
-		ev.Options.SetValue("query_params", "map", params)
-	}
-
+	/*
+		u, err := url.ParseRequestURI(req.RequestURI)
+		if err == nil {
+			params := u.Query()
+			ev.Options.SetValue("query_params", "map", params)
+		}
+	*/
 	defer req.Body.Close()
 	b, err := ioutil.ReadAll(req.Body)
 	if err == nil {
-		ev.Options.SetValue("data", "string", string(b))
+		//ev.Options.SetValue("data", "string", string(b))
 	}
 	log.Printf("Body: %s\n", string(b))
 
-	jiraEvent := &JiraEvent{}
+	jiraEvent, _ = mod.handleJiraEvent(b)
 
-	err = json.Unmarshal(b, &jiraEvent)
-	if err == nil {
-		ev.Options.SetValue("json", "map", jiraEvent)
-		log.Printf("JiraBee WebhookEvent : %s\n", jiraEvent.WebhookEvent)
-		if jiraEvent.Issue != nil {
-			log.Printf("JiraBee issue key: %s\n", jiraEvent.Issue.Key)
+	/*
+		if jiraEvent, _ := mod.handleIssueRelatedEvent(b); jiraEvent != nil  {
+			return
+		} else if jiraEvent, _ := mod.handleIssueRelatedEvent(b); jiraEvent != nil  {
+			return
+		} else {
+			mod.LogErrorf("Unhandled event: %s", *v.Type)
 		}
-	}
 
-	switch req.Method {
-	case "GET":
-		ev.Name = "get"
-	case "POST":
-		ev.Name = "post"
-	case "PUT":
-		ev.Name = "put"
-	case "PATCH":
-		ev.Name = "patch"
-	case "DELETE":
-		ev.Name = "delete"
-	}
 
-	mod.eventChan <- ev
+		if jiraEvent == nil {
+			return
+		}*/
+
 }
 
 // ReloadOptions parses the config options and initializes the Bee.
