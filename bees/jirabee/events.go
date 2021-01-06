@@ -55,6 +55,21 @@ func (mod *JiraBee) handleJiraEvent(data []byte) (*JiraEvent, error) {
 }
 
 func (mod *JiraBee) handleIssueCreatedEvent(data *JiraEvent) error {
+
+	key := ""
+	summary := ""
+	description := ""
+
+	if data.Issue != nil && data.Issue.Key != nil {
+		key = data.Issue.Key
+	}
+	if data.Issue != nil && data.Issue.Fields.Summary != nil {
+		summary = data.Issue.Fields.Summary
+	}
+	if data.Issue != nil && data.Issue.Fields.Description != nil {
+		description = data.Issue.Fields.Description
+	}
+
 	ev := bees.Event{
 		Bee:  mod.Name(),
 		Name: "issue_created",
@@ -62,17 +77,17 @@ func (mod *JiraBee) handleIssueCreatedEvent(data *JiraEvent) error {
 			{
 				Name:  "key",
 				Type:  "string",
-				Value: data.Issue.Key,
+				Value: key,
 			},
 			{
 				Name:  "title",
 				Type:  "string",
-				Value: data.Issue.Fields.Summary,
+				Value: summary,
 			},
 			{
 				Name:  "description",
 				Type:  "string",
-				Value: data.Issue.Fields.Description,
+				Value: description,
 			},
 		},
 	}
